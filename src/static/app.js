@@ -10,8 +10,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const response = await fetch("/activities");
       const activities = await response.json();
 
-      // Clear loading message
+      // Clear loading message and dropdown
       activitiesList.innerHTML = "";
+      activitySelect.innerHTML = "";
 
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
@@ -52,27 +53,6 @@ document.addEventListener("DOMContentLoaded", () => {
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
           ${participantsHTML}
         `;
-// Handle participant delete (unregister)
-document.addEventListener("click", async function (e) {
-  if (e.target.classList.contains("delete-icon")) {
-    const activity = e.target.getAttribute("data-activity");
-    const email = e.target.getAttribute("data-email");
-    if (confirm(`Remove ${email} from ${activity}?`)) {
-      try {
-        const res = await fetch(`/api/activities/${encodeURIComponent(activity)}/unregister`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email })
-        });
-        if (!res.ok) throw new Error("Failed to unregister participant");
-        // Refresh activities list
-        loadActivities();
-      } catch (err) {
-        alert("Error: " + err.message);
-      }
-    }
-  }
-});
 
         activitiesList.appendChild(activityCard);
 
@@ -96,35 +76,44 @@ document.addEventListener("click", async function (e) {
     const activity = document.getElementById("activity").value;
 
     try {
-      const response = await fetch(
-        `/activities/${encodeURIComponent(activity)}/signup?email=${encodeURIComponent(email)}`,
-        {
-          method: "POST",
-        }
-      );
-
-      const result = await response.json();
-
-      if (response.ok) {
-        messageDiv.textContent = result.message;
-        messageDiv.className = "success";
-        signupForm.reset();
-      } else {
-        messageDiv.textContent = result.detail || "An error occurred";
-        messageDiv.className = "error";
-      }
-
-      messageDiv.classList.remove("hidden");
-
-      // Hide message after 5 seconds
-      setTimeout(() => {
-        messageDiv.classList.add("hidden");
-      }, 5000);
+      const res = await fetch("/api/activities/" + encodeURIComponent(activity) + "/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+      if (!res.ok) throw new Error("Failed to sign up");
+      messageDiv.textContent = "Signed up successfully!";
+      messageDiv.className = "success";
+      signupForm.reset();
+      fetchActivities(); // Refresh activities list after signup
     } catch (error) {
       messageDiv.textContent = "Failed to sign up. Please try again.";
       messageDiv.className = "error";
-      messageDiv.classList.remove("hidden");
       console.error("Error signing up:", error);
+    }
+    messageDiv.classList.remove("hidden");
+    setTimeout(() => {
+      messageDiv.classList.add("hidden");
+    }, 5000);
+  });
+  // Handle participant delete (unregister) globally
+  document.addEventListener("click", async function (e) {
+    if (e.target.classList.contains("delete-icon")) {
+      const activity = e.target.getAttribute("data-activity");
+      const email = e.target.getAttribute("data-email");
+      if (confirm(`Remove ${email} from ${activity}?`)) {
+        try {
+          const res = await fetch(`/api/activities/${encodeURIComponent(activity)}/unregister`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email })
+          });
+          if (!res.ok) throw new Error("Failed to unregister participant");
+          fetchActivities(); // Refresh activities list
+        } catch (err) {
+          alert("Error: " + err.message);
+        }
+      }
     }
   });
 
