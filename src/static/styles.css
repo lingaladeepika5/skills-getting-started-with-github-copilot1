@@ -167,6 +167,4 @@ footer {
                         color: #888;
                           font-style: italic;
                             margin-left: 2px;
-                            }                            git add src/static/app.js src/static/styles.css
-                            git commit -m "Add participants section to activity cards with styled list"
-                            git push
+                            }
