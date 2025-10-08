@@ -26,9 +26,14 @@ document.addEventListener("DOMContentLoaded", () => {
           participantsHTML = `
             <div class="participants-section">
               <strong>Participants:</strong>
-              <ul class="participants-list">
-                ${details.participants.map(email => `<li>${email}</li>`).join("")}
-              </ul>
+              <div class="participants-list">
+                ${details.participants.map(email => `
+                  <div class="participant-row">
+                    <span class="participant-email">${email}</span>
+                    <span class="delete-icon" title="Remove" data-activity="${name}" data-email="${email}">&#128465;</span>
+                  </div>
+                `).join("")}
+              </div>
             </div>
           `;
         } else {
@@ -47,6 +52,27 @@ document.addEventListener("DOMContentLoaded", () => {
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
           ${participantsHTML}
         `;
+// Handle participant delete (unregister)
+document.addEventListener("click", async function (e) {
+  if (e.target.classList.contains("delete-icon")) {
+    const activity = e.target.getAttribute("data-activity");
+    const email = e.target.getAttribute("data-email");
+    if (confirm(`Remove ${email} from ${activity}?`)) {
+      try {
+        const res = await fetch(`/api/activities/${encodeURIComponent(activity)}/unregister`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email })
+        });
+        if (!res.ok) throw new Error("Failed to unregister participant");
+        // Refresh activities list
+        loadActivities();
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
+    }
+  }
+});
 
         activitiesList.appendChild(activityCard);
 
